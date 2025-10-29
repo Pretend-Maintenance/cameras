@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Traffic Cameras</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 2px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+    }
+
+    #last-updated {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 10px;
+    }
+
+    #camera-container {
+      display: flex;
+      flex-wrap: wrap;
+      /* Max width for 4 cameras, roughly 4 * (720 / 1.5) + gaps */
+      max-width: 1920px; /* Adjusted for smaller images with 4 per row */
+      margin: 0 auto;
+      justify-content: center; /* Center the rows of cameras */
+      gap: 5px; /* Add a small gap between cameras for visual separation */
+    }
+
+    .camera {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 1px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      width: calc((100% / 4) - 4px); /* (100% / 4) for four items, -4px for gap compensation */
+      max-width: 475px; /* Roughly 720px / 1.5 - adjusted for gaps */
+      box-sizing: border-box;
+      cursor: pointer; /* Indicate that the camera div is clickable */
+    }
+
+    .camera img {
+      width: 100%;
+      height: auto; /* Changed to auto to maintain aspect ratio */
+      max-height: 384px; /* Scaled down from 576px (576 / 1.5) */
+      object-fit: cover;
+      border-radius: 4px;
+      background: #000;
+      opacity: 0;
+      transition: opacity 0.3s ease-in;
+    }
+
+    .camera-info {
+      margin-top: 2px;
+      font-size: 0.82rem;
+      color: #333;
+      text-align: center;
+    }
+
+    .camera-info .id {
+      font-weight: bold;
+    }
+
+    .camera-info .location {
+      font-size: 0.75rem;
+      color: #555;
+    }
+
+    .camera img[src*=".jpg"] {
+      opacity: 1;
+    }
+
+    /* Styles for the Full-Screen Modal */
+    #fullscreen-modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1000; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+      align-items: center;
+      justify-content: center;
+    }
+
+    #fullscreen-modal.active {
+      display: flex; /* Show when active */
+    }
+
+    #modal-content {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain; /* Ensure the whole image is visible */
+    }
+
+    #modal-caption {
+      margin-top: 10px;
+      color: #ccc;
+      font-size: 1.2rem;
+      text-align: center;
+      width: 80%;
+      max-width: 700px;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: #f1f1f1;
+      font-size: 40px;
+      font-weight: bold;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+      color: #bbb;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Live Traffic Cameras</h1>
+  <div id="last-updated">Last updated: never</div>
+  <div id="camera-container"></div>
+
+  <div id="fullscreen-modal">
+    <span class="close-button">&times;</span>
+    <img id="modal-content" src="" alt="Full-size camera image">
+    <div id="modal-caption"></div>
+  </div>
+
+  <script>
+    const cameras = [
+      { id: "43708", location: "M4 170/8A J18-J19", direction: "Westbound >" },
+  { id: "43766", location: "M4 176/6A J18/19", direction: "Westbound >" },
+  { id: "43790", location: "M4 179/0B J19-J18", direction: "Eastbound <", lat: 51.505, lon: -2.550 },
+  { id: "43818", location: "M4 181/8A J19", direction: "Westbound >", lat: 51.510, lon: -2.520 },
+  { id: "43819", location: "M4 181/9A J19-J20", direction: "Westbound >" },
+  { id: "43826", location: "M4 182/5A J19-J20", direction: "Westbound >" },
+  { id: "43829", location: "M4 182/9B PTZ", direction: "Eastbound <", lat: 51.515, lon: -2.510 },
+  { id: "43830", location: "M4 183/0B J20-J19", direction: "Eastbound <", lat: 51.520, lon: -2.500 },
+  { id: "43836", location: "M4 183/6A PTZ", direction: "Westbound >", lat: 51.517, lon: -2.505 },
+  { id: "43840", location: "M4 184/0B J20-J19", direction: "Eastbound <" },
+  { id: "43845", location: "M4 184/5A PTZ", direction: "Westbound >", lat: 51.522, lon: -2.495 },
+  { id: "43849", location: "M4 184/9B J20-J19", direction: "Eastbound <" },
+  { id: "43853", location: "M4 185/4B PTZ J20/19", direction: "Eastbound <", lat: 51.535, lon: -2.470 },
+  { id: "43858", location: "M4 185/8A PTZ", direction: "Westbound >" },
+  { id: "43861", location: "M4 186/0A J19-J20", direction: "Westbound >", lat: 51.532, lon: -2.475 },
+  { id: "43865", location: "M4 186/5B PTZ", direction: "Eastbound <" },
+  { id: "43870", location: "M4 187/0B PTZ", direction: "Eastbound <", lat: 51.5541755, lon: -2.5541232 },
+  { id: "43878", location: "M4 187/8B J21-J20", direction: "Eastbound <" },
+  { id: "43932", location: "M48 193/2B J1", direction: "Eastbound <", lat: 51.5964241, lon: -2.6081321 },
+  { id: "43934", location: "M4 193/4A J21-J22", direction: "Westbound >" }
+    ];
+
+    const container = document.getElementById('camera-container');
+    const lastUpdatedEl = document.getElementById('last-updated');
+    const fullscreenModal = document.getElementById('fullscreen-modal');
+    const modalContent = document.getElementById('modal-content');
+    const modalCaption = document.getElementById('modal-caption');
+    const closeButton = document.querySelector('.close-button');
+
+    // Load camera cards
+    cameras.forEach(cam => {
+      const div = document.createElement('div');
+      div.className = 'camera';
+      div.id = `cam-${cam.id}`;
+      div.innerHTML = `
+        <img src="" alt="Camera ${cam.id}">
+        <div class="camera-info">
+          <div class="id">Camera ${cam.id}</div>
+          <div class="location">${cam.location}</div>
+          <div class="direction">Direction: ${cam.direction}</div>
+        </div>
+      `;
+      container.appendChild(div);
+
+      // Add click event listener to each camera div
+      div.addEventListener('click', () => {
+        const timestamp = Date.now();
+        modalContent.src = `https://public.highwaystrafficcameras.co.uk/cctvpublicaccess/images/${cam.id}.jpg?ts=${timestamp}`;
+        modalCaption.textContent = `${cam.location} - Direction: ${cam.direction}`;
+        fullscreenModal.classList.add('active'); // Show the modal
+      });
+    });
+
+    // Close the modal when the close button is clicked
+    closeButton.addEventListener('click', () => {
+      fullscreenModal.classList.remove('active');
+    });
+
+    // Close the modal when clicking outside the image (on the overlay)
+    fullscreenModal.addEventListener('click', (event) => {
+      if (event.target === fullscreenModal) {
+        fullscreenModal.classList.remove('active');
+      }
+    });
+
+
+    // Update images every 10s
+    function updateImages() {
+      const timestamp = Date.now();
+      cameras.forEach(cam => {
+        const img = document.querySelector(`#cam-${cam.id} img`);
+        img.src = `https://public.highwaystrafficcameras.co.uk/cctvpublicaccess/images/${cam.id}.jpg?ts=${timestamp}`;
+      });
+
+      const now = new Date();
+      lastUpdatedEl.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+    }
+
+    updateImages();
+    setInterval(updateImages, 10000);
+  </script>
+
+</body>
+</html>
