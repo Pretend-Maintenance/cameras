@@ -2,11 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Traffic Cameras</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Traffic Cameras</title>
   <style>
+    /* -----------------------------------------------------------------
+    ** General Styles (Light Mode Default)
+    ** ----------------------------------------------------------------- */
+    :root {
+      /* Define CSS Variables for easy theme switching */
+      --background-color: #f5f5f5;
+      --text-color: #333;
+      --header-color: #333;
+      --secondary-text-color: #555;
+      --card-background: white;
+      --card-border-color: #ccc;
+      --modal-caption-color: #ccc;
+      --close-button-color: #f1f1f1;
+    }
+
     body {
       font-family: sans-serif;
-      background: #f5f5f5;
+      background: var(--background-color);
+      color: var(--text-color);
       margin: 0;
       padding: 2px;
     }
@@ -15,41 +31,42 @@
       text-align: center;
       font-size: 1.8rem;
       margin-bottom: 6px;
+      color: var(--header-color);
     }
 
     #last-updated {
       text-align: center;
       font-size: 0.9rem;
-      color: #555;
+      color: var(--secondary-text-color);
       margin-bottom: 10px;
     }
 
     #camera-container {
       display: flex;
       flex-wrap: wrap;
-      /* Max width for 4 cameras, roughly 4 * (720 / 1.5) + gaps */
-      max-width: 1920px; /* Adjusted for smaller images with 4 per row */
+      max-width: 1920px;
       margin: 0 auto;
-      justify-content: center; /* Center the rows of cameras */
-      gap: 5px; /* Add a small gap between cameras for visual separation */
+      justify-content: center;
+      gap: 5px;
     }
 
     .camera {
-      background: white;
-      border: 1px solid #ccc;
+      background: var(--card-background);
+      border: 1px solid var(--card-border-color);
       border-radius: 4px;
       padding: 1px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      width: calc((100% / 4) - 4px); /* (100% / 4) for four items, -4px for gap compensation */
-      max-width: 475px; /* Roughly 720px / 1.5 - adjusted for gaps */
+      /* Default for larger screens: 4 per row */
+      width: calc((100% / 4) - 4px);
+      max-width: 475px;
       box-sizing: border-box;
-      cursor: pointer; /* Indicate that the camera div is clickable */
+      cursor: pointer;
     }
 
     .camera img {
       width: 100%;
-      height: auto; /* Changed to auto to maintain aspect ratio */
-      max-height: 384px; /* Scaled down from 576px (576 / 1.5) */
+      height: auto;
+      max-height: 384px;
       object-fit: cover;
       border-radius: 4px;
       background: #000;
@@ -60,7 +77,7 @@
     .camera-info {
       margin-top: 2px;
       font-size: 0.82rem;
-      color: #333;
+      color: var(--text-color);
       text-align: center;
     }
 
@@ -70,7 +87,7 @@
 
     .camera-info .location {
       font-size: 0.75rem;
-      color: #555;
+      color: var(--secondary-text-color);
     }
 
     .camera img[src*=".jpg"] {
@@ -79,21 +96,21 @@
 
     /* Styles for the Full-Screen Modal */
     #fullscreen-modal {
-      display: none; /* Hidden by default */
-      position: fixed; /* Stay in place */
-      z-index: 1000; /* Sit on top */
+      display: none;
+      position: fixed;
+      z-index: 1000;
       left: 0;
       top: 0;
-      width: 100%; /* Full width */
-      height: 100%; /* Full height */
-      overflow: auto; /* Enable scroll if needed */
-      background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.9);
       align-items: center;
       justify-content: center;
     }
 
     #fullscreen-modal.active {
-      display: flex; /* Show when active */
+      display: flex;
     }
 
     #modal-content {
@@ -101,12 +118,12 @@
       display: block;
       max-width: 90%;
       max-height: 90%;
-      object-fit: contain; /* Ensure the whole image is visible */
+      object-fit: contain;
     }
 
     #modal-caption {
       margin-top: 10px;
-      color: #ccc;
+      color: var(--modal-caption-color);
       font-size: 1.2rem;
       text-align: center;
       width: 80%;
@@ -117,7 +134,7 @@
       position: absolute;
       top: 15px;
       right: 35px;
-      color: #f1f1f1;
+      color: var(--close-button-color);
       font-size: 40px;
       font-weight: bold;
       transition: 0.3s;
@@ -129,6 +146,63 @@
       color: #bbb;
       text-decoration: none;
       cursor: pointer;
+    }
+
+    /* -----------------------------------------------------------------
+    ** 🌙 Dark Mode Styles - Uses CSS Variables
+    ** ----------------------------------------------------------------- */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background-color: #1a1a1a;
+        --text-color: #e0e0e0;
+        --header-color: #ffffff;
+        --secondary-text-color: #aaaaaa;
+        --card-background: #2b2b2b;
+        --card-border-color: #444;
+        --modal-caption-color: #f0f0f0;
+        --close-button-color: #f0f0f0;
+      }
+
+      .camera {
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3); /* Darker shadow for contrast */
+      }
+    }
+
+    /* -----------------------------------------------------------------
+    ** 📱 Mobile Responsiveness
+    ** ----------------------------------------------------------------- */
+
+    /* Tablet/Smaller Laptop View: 3 Cameras per row */
+    @media (max-width: 1200px) {
+      .camera {
+        width: calc((100% / 3) - 4px); /* 3 items per row */
+        max-width: none; /* Allow full scaling */
+      }
+    }
+
+    /* Large Mobile/Portrait Tablet View: 2 Cameras per row */
+    @media (max-width: 768px) {
+      .camera {
+        width: calc((100% / 2) - 4px); /* 2 items per row */
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .camera img {
+        max-height: 250px; /* Adjust max height for smaller screens */
+      }
+    }
+
+    /* Small Mobile/Smartphone View: 1 Camera per row */
+    @media (max-width: 480px) {
+      .camera {
+        width: 100%; /* 1 item per row */
+        max-width: 98%;
+        margin: 0 auto; /* Center single item */
+        margin-bottom: 5px;
+      }
     }
   </style>
 </head>
@@ -217,7 +291,12 @@
       const timestamp = Date.now();
       cameras.forEach(cam => {
         const img = document.querySelector(`#cam-${cam.id} img`);
-        img.src = `https://public.highwaystrafficcameras.co.uk/cctvpublicaccess/images/${cam.id}.jpg?ts=${timestamp}`;
+        // We use a temporary image to ensure the browser fetches the new image and avoids caching issues.
+        const tempImg = new Image();
+        tempImg.onload = () => {
+          img.src = tempImg.src; // Only update src once the image is loaded
+        };
+        tempImg.src = `https://public.highwaystrafficcameras.co.uk/cctvpublicaccess/images/${cam.id}.jpg?ts=${timestamp}`;
       });
 
       const now = new Date();
